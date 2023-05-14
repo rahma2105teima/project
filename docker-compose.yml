@@ -2,14 +2,17 @@ version: '3'
 
 services:
   frontend:
-    build: .
+    build: 
+       dockerfile: Dockerfile
     ports:
       - "80:3000"
     environment:
       - API_URL=http://api:8080
     depends_on:
       - api
-  api:
-    image: your-api-image:latest
-    ports:
-      - "8080:8080"
+    image: api-image:latest
+  ngnix-server:
+  image: ngnix
+  container_name: ngnix-server-demo
+  ports:
+      - 8080:80
