@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Application</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+		}
+		table {
+			border-collapse: collapse;
+			width: 100%;
+		}
+		th, td {
+			text-align: left;
+			padding: 8px;
+			border-bottom: 1px solid #ddd;
+		}
+		tr:hover {
+			background-color: #f5f5f5;
+		}
+		form {
+			margin-top: 20px;
+		}
+		input[type=text], select {
+			width: 100%;
+			padding: 12px 20px;
+			margin: 8px 0;
+			display: inline-block;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			box-sizing: border-box;
+		}
+		input[type=submit] {
+			background-color: rgb(87, 87, 234);
+			color: white;
+			padding: 14px 20px;
+			margin: 8px 0;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+		}
+		input[type=submit]:hover {
+			background-color: rgb(87, 87, 234);
+		}
+		input[type=button] {
+			background-color: #f4b136;
+			color: white;
+			padding: 14px 20px;
+			margin: 8px 0;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+		}
+		input[type=button]:hover {
+			background-color:#f4b136;
+		}
+	</style>
+</head>
+<body>
+	<h1><center>*Personal Information*</center></h1>
+
+	<h2><center>People</center></h2>
+	<table id="people-table">
+		<tr>
+			<th>ID</th>
+			<th>Name</th>
+			<th>Age</th>
+			<th>Email</th>
+			<th>Actions</th>
+		</tr>
+	</table>
+
+	<h2><center>Add Person</center></h2>
+	<form id="add-form">
+		<label for="name">Name:</label>
+		<input type="text" id="name" name="name" required>
+
+		<label for="age">Age:</label>
+		<input type="text" id="age" name="age" required>
+
+		<label for="email">Email:</label>
+		<input type="text" id="email" name="email" required>
+
+		<input type="submit" value="Add Person">
+	</form>
+
+	<h2><center>Update Person</center></h2>
+	<form id="update-form">
+		<label for="id">ID:</label>
+		<input type="text" id="id" name="id" required>
+
+		<label for="name">Name:</label>
+		<input type="text" id="name" name="name" required>
+
+		<label for="age">Age:</label>
+		<input type="text" id="age" name="age" required>
+
+		<label for="email">Email:</label>
+		<input type="text" id="email" name="email" required>
+
+		<input type="submit" value="Update Person">
+	</form>
+
+	<h2><center>Delete Person</center></h2>
+	<form id="delete-form">
+		<label for="id">ID:</label>
+		<input type="text" id="id" name="id" required>
+
+		<input type="button" value="Delete Person">
+	</form>
+
+	<script>
+		
+		const apiUrl = 'http://api:8080/people';
+		const table = document.querySelector('#people-table');
+		const addForm = document.querySelector('#add-form');
+		const updateForm = document.querySelector('#update-form');
+		const deleteForm = document.querySelector('#delete-form');
+
+		function getData() {
+			fetch(apiUrl)
+				.then(response => response.json())
+				.then(data => {
+					
+					table.innerHTML = `
+						<tr>
+							<th>ID</th>
+							<th>Name</th>
+							<th>Age</th>
+							<th>Email</th>
+							<th>Actions</th>
+						</tr>
+					`;
+
+					data.forEach(person => {
+						const row = table.insertRow(-1);
+						row.innerHTML = `
+							<td>${person.id}</td>
+							<td>${person.name}</td>
+							<td>${person.age}</td>
+							<td>${person.email}</td>
+							<td>
+								<button onclick="editPerson(${person.id}, '${person.name}', ${person.age}, '${person.email}')">Edit</button>
+								<button onclick="deletePerson(${person.id})">Delete</button>
+							</td>
+						`;
+					});
+				})
+				.catch(error => console.error(error));
+		}
+
+		
+		getData();
+
+		
+		addForm.addEventListener('submit', event => {
+			event.preventDefault();
+
+			
+			const formData = new FormData(addForm);
+			const name = formData.get('name');
+			const age = formData.get('age');
+			const email = formData.get('email');
+
+			
+			fetch(apiUrl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ name, age, email })
+			})
+				.then(response => {
+					if (response.ok) {
+						
+						getData();
+						
+						addForm.reset();
+					} else {
+						throw new Error('Failed to add person');
+					}
+				})
+				.catch(error => console.error(error));
+		});
+
+		
+		updateForm.addEventListener('submit', event => {
+			event.preventDefault();
+
+			
+			const formData = new FormData(updateForm);
+			const id = formData.get('id');
+			const name = formData.get('name');
+			const age = formData.get('age');
+			const email = formData.get('email');
+
+			
+			fetch(`${apiUrl}/${id}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ name, age, email })
+			})
+				.then(response => {
+					if (response.ok) {
+						// Refresh the table
+						getData();
+						// Clear the form
+						updateForm.reset();
+					} else {
+						throw new Error(`Failed to update person with ID ${id}`);
+					}
+				})
+				.catch(error => console.error(error));
+		});
+
+		
+		deleteForm.addEventListener('click', event => {
+			event.preventDefault();
+
+			
+			const formData = new FormData(deleteForm);
+			const id = formData.get('id');
+
+			
+			fetch(`${apiUrl}/${id}`, {
+				method: 'DELETE'
+			})
+				.then(response => {
+					if (response.ok) {
+						
+						getData();
+						
+						deleteForm.reset();
+					} else {
+						throw new Error(`Failed to delete person with ID ${id}`);
+					}
+				})
+				.catch(error => console.error(error));
+		});
+
+		
+		function editPerson(id, name, age, email) {
+			updateForm.id.value = id;
+			updateForm.name.value = name;
+			updateForm.age.value = age;
+			updateForm.email.value = email;
+		}
+	</script>
+</body>
+</html>
